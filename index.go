@@ -70,7 +70,7 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	switch update.Message.Text {
 	case "/showAll":
-		for i := 1; i <= len(questions); i++ {
+		for i := 1; i <= len(questions)+1; i++ {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, string(i)+". "+questions[string(i)]["text"]+"\nAnswer: "+questions[string(i)]["answ"])
 			bot.Send(msg)
 		}
@@ -131,7 +131,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			break
 
 		case "addingText":
-			questions[string(len(questions))]["text"] = update.Message.Text
+			questions[string(len(questions)+1)]["text"] = update.Message.Text
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ответик в студию!")
 			botState = "addingAnswer"
 			bot.Send(msg)
