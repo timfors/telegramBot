@@ -8,14 +8,20 @@ import (
 	"strings"
 )
 
+var editQuestionNum string
+var botState string
+var questions map[string]map[string]string
+var progresses map[int64]int
+var commands map[string]string
+
 func main() {
-	editQuestionNum := "0"
-	botState := "idle"
+	editQuestionNum = "0"
+	botState = "idle"
 	file, err := ioutil.ReadFile("questions.json")
-	questions := map[string]map[string]string{}
+	questions = map[string]map[string]string{}
 	err = json.Unmarshal(file, &questions)
-	progresses := map[int64]int{}
-	commands := map[string]string{"/showAll": "show all the questions", "/addQuestion": "add question", "/removeQuestion": "remove question", "/changeQuestion": "changes question"}
+	progresses = map[int64]int{}
+	commands = map[string]string{"/showAll": "show all the questions", "/addQuestion": "add question", "/removeQuestion": "remove question", "/changeQuestion": "changes question"}
 	bot, err := tgbotapi.NewBotAPI("866951564:AAHdOQgN6ZrypN0uraxAijmrDmDGln7bw48")
 	if err != nil {
 		log.Panic(err)
@@ -39,16 +45,16 @@ func main() {
 
 		}
 		if update.Message.Chat.ID == 322726399 {
-			AdminAnswer(bot, update, progresses, questions, botState, commands, editQuestionNum)
+			AdminAnswer(bot, update)
 		} else {
-			SimpleAnswer(bot, update, progresses, questions, botState)
+			SimpleAnswer(bot, update)
 		}
 		log.Printf("\nbotState: %s\n", botState)
 
 	}
 }
 
-func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update, progresses map[int64]int, questions map[string]map[string]string, botState string) {
+func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	stage := progresses[update.Message.Chat.ID]
 	answ := questions[string(stage)]["answ"]
 	if strings.ToLower(update.Message.Text) == strings.ToLower(answ) {
@@ -61,7 +67,7 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update, progresses map[i
 	}
 }
 
-func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update, progresses map[int64]int, questions map[string]map[string]string, botState string, commands map[string]string, editQuestionNum string) {
+func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	switch update.Message.Text {
 	case "/showAll":
 		for i := 1; i <= len(questions); i++ {
@@ -142,7 +148,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update, progresses map[in
 			break
 
 		case "idle":
-			SimpleAnswer(bot, update, progresses, questions, botState)
+			SimpleAnswer(bot, update)
 		}
 	}
 }
