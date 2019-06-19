@@ -8,9 +8,18 @@ import (
 	"strings"
 )
 
+type Question struct {
+	text   string
+	answer string
+}
+
+type Questions struct {
+	Questions map[string]*Question
+}
+
 var editQuestionNum string
 var botState string
-var questions map[string]map[string]string
+var questions Questions
 var progresses map[int64]int
 var commands map[string]string
 
@@ -18,7 +27,6 @@ func main() {
 	editQuestionNum = "0"
 	botState = "idle"
 	file, err := ioutil.ReadFile("questions.json")
-	questions = map[string]map[string]string{}
 	err = json.Unmarshal(file, &questions)
 	progresses = map[int64]int{}
 	commands = map[string]string{"/showAll": "show all the questions", "/addQuestion": "add question", "/removeQuestion": "remove question", "/changeQuestion": "changes question"}
@@ -38,8 +46,8 @@ func main() {
 			case "start":
 			case "resetProgress":
 				progresses[update.Message.Chat.ID] = 1
-				question, _ := questions["0"]
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, question["text"])
+				question, _ := questions.Questions["0"]
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.text)
 				bot.Send(msg)
 			}
 
@@ -56,12 +64,12 @@ func main() {
 
 func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	stage := progresses[update.Message.Chat.ID]
-	answ := questions[string(stage)]["answ"]
+	answ := questions.Questions[string(stage)].answer
 	if strings.ToLower(update.Message.Text) == strings.ToLower(answ) {
 		progresses[update.Message.Chat.ID]++
-		if stage-1 < len(questions) {
-			question, _ := questions[string(stage+1)]
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, question["text"])
+		if stage-1 < len(questions.Questions) {
+			question, _ := questions.Questions[string(stage+1)]
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.text)
 			bot.Send(msg)
 		}
 	}
@@ -70,9 +78,9 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	switch update.Message.Text {
 	case "/showAll":
-		for i := 1; i <= len(questions); i++ {
+		for i := 1; i <= len(questions.Questions); i++ {
 			log.Printf("\n%d\n", i)
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, string(i)+". "+questions[string(i)]["text"]+"\nAnswer: "+questions[string(i)]["answ"])
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, string(i)+". "+questions.Questions[string(i)].text+"\nAnswer: "+questions.Questions[string(i)].answer)
 			bot.Send(msg)
 		}
 		log.Printf("\nbotState: %s\n", botState)
@@ -112,7 +120,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 		case "editingQuestionText":
 			if len(strings.Split(update.Message.Text, " ")) > 0 {
-				questions[editQuestionNum]["text"] = update.Message.Text
+				questions.Questions[editQuestionNum].text = update.Message.Text
 			}
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ну а сейчас меняй ответ. (оставь пустым, если не хочешь изменять)")
 			bot.Send(msg)
@@ -122,17 +130,17 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 		case "editingQuestionAnswer":
 			if len(strings.Split(update.Message.Text, " ")) > 0 {
-				questions[editQuestionNum]["answ"] = update.Message.Text
+				questions.Questions[editQuestionNum].answer = update.Message.Text
 			}
 			botState = "idle"
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Начальник, принимай работу!")
 			bot.Send(msg)
-			SaveJSON(questions)
+			SaveJSON()
 			log.Printf("\nbotState: %s\n", botState)
 			break
 
 		case "addingText":
-			questions[string(len(questions)+1)]["text"] = update.Message.Text
+			questions.Questions[string(len(questions.Questions)+1)].text = update.Message.Text
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ответик в студию!")
 			botState = "addingAnswer"
 			bot.Send(msg)
@@ -140,11 +148,11 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			break
 
 		case "addingAnswer":
-			questions[string(len(questions))]["answer"] = update.Message.Text
+			questions.Questions[string(len(questions.Questions))].answer = update.Message.Text
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Хотово!")
 			botState = "idle"
 			bot.Send(msg)
-			SaveJSON(questions)
+			SaveJSON()
 			log.Printf("\nbotState: %s\n", botState)
 			break
 
@@ -154,7 +162,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	}
 }
 
-func SaveJSON(questions map[string]map[string]string) {
+func SaveJSON() {
 	output, _ := json.Marshal(questions)
 	ioutil.WriteFile("question.json", output, 0644)
 }
