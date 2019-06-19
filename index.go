@@ -85,8 +85,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update, progresses map[in
 		log.Printf("\nbotState: %s\n", botState)
 		break
 
-	case "/commands":
-	case "/?":
+	case "/?", "/commands":
 		for command, description := range commands {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, command+" - "+description)
 			bot.Send(msg)
@@ -101,6 +100,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update, progresses map[in
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Теперь на какой текст меняем? (оставь пустым, если не хочешь изменять)")
 			bot.Send(msg)
 			botState = "editingQuestionText"
+			log.Printf("\nbotState: %s\n", botState)
 			break
 
 		case "editingQuestionText":
@@ -110,6 +110,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update, progresses map[in
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ну а сейчас меняй ответ. (оставь пустым, если не хочешь изменять)")
 			bot.Send(msg)
 			botState = "editingQuestionAnswer"
+			log.Printf("\nbotState: %s\n", botState)
 			break
 
 		case "editingQuestionAnswer":
@@ -120,6 +121,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update, progresses map[in
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Начальник, принимай работу!")
 			bot.Send(msg)
 			SaveJSON(questions)
+			log.Printf("\nbotState: %s\n", botState)
 			break
 
 		case "addingText":
@@ -127,6 +129,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update, progresses map[in
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ответик в студию!")
 			botState = "addingAnswer"
 			bot.Send(msg)
+			log.Printf("\nbotState: %s\n", botState)
 			break
 
 		case "addingAnswer":
@@ -135,6 +138,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update, progresses map[in
 			botState = "idle"
 			bot.Send(msg)
 			SaveJSON(questions)
+			log.Printf("\nbotState: %s\n", botState)
 			break
 
 		case "idle":
