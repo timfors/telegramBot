@@ -39,11 +39,11 @@ func main() {
 
 		}
 		if update.Message.Chat.ID == 322726399 {
-			go AdminAnswer(bot, update, progresses, questions, botState, commands, editQuestionNum)
+			AdminAnswer(bot, update, progresses, questions, botState, commands, editQuestionNum)
 		} else {
-			go SimpleAnswer(bot, update, progresses, questions, botState)
+			SimpleAnswer(bot, update, progresses, questions, botState)
 		}
-		log.Printf("botState: %s\n", botState)
+		log.Printf("\nbotState: %s\n", botState)
 
 	}
 }
