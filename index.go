@@ -68,18 +68,21 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update, progresses map[in
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, string(i)+". "+questions[string(i)]["text"]+"\nAnswer: "+questions[string(i)]["answ"])
 			bot.Send(msg)
 		}
+		log.Printf("\nbotState: %s\n", botState)
 		break
 
-	case "/editQuest":
+	case "/changeQuestion":
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Номер вопроса, уважаемый.")
 		botState = "getQuestionNum"
 		bot.Send(msg)
+		log.Printf("\nbotState: %s\n", botState)
 		break
 
 	case "/addQuestion":
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Давай вопрос и разойдемся.")
 		botState = "addingText"
 		bot.Send(msg)
+		log.Printf("\nbotState: %s\n", botState)
 		break
 
 	case "/commands":
