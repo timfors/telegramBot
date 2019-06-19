@@ -1,1 +1,1 @@
-web: telegramBot
+worker: telegramBot
