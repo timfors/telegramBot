@@ -1,1 +1,1 @@
-worker: telegramBot
+worker: go run index.go
