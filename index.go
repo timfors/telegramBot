@@ -43,6 +43,7 @@ func main() {
 		} else {
 			go SimpleAnswer(bot, update, progresses, questions, botState)
 		}
+		log.Printf("botState: %s\n", botState)
 
 	}
 }
