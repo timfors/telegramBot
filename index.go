@@ -70,7 +70,8 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	switch update.Message.Text {
 	case "/showAll":
-		for i := 1; i <= len(questions)+1; i++ {
+		for i := 1; i <= len(questions); i++ {
+			log.Printf("\n%d\n", i)
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, string(i)+". "+questions[string(i)]["text"]+"\nAnswer: "+questions[string(i)]["answ"])
 			bot.Send(msg)
 		}
