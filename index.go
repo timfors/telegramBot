@@ -190,5 +190,5 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 func SaveJSON() {
 	output, _ := json.MarshalIndent(questions, "", " ")
-	ioutil.WriteFile("question.json", output, 0644)
+	ioutil.WriteFile("questions.json", output, 0644)
 }
