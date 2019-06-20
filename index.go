@@ -52,7 +52,7 @@ func main() {
 	updates, err := bot.GetUpdatesChan(ucfg)
 
 	for update := range updates {
-		if update.Message.Chat.ID == 322726399 {
+		if update.Message.Chat.ID == 322726399 || update.Message.Chat.ID == 479731828 {
 			AdminAnswer(bot, update)
 		} else {
 			if update.Message.IsCommand() {
