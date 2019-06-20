@@ -70,11 +70,11 @@ func main() {
 
 func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	stage := progresses[update.Message.Chat.ID]
-	answ := questions.Questions[string(stage)].Answer
+	answ := questions.Questions[strconv.Itoa(stage)].Answer
 	if strings.ToLower(update.Message.Text) == strings.ToLower(answ) {
 		progresses[update.Message.Chat.ID]++
 		if stage-1 < len(questions.Questions) {
-			question, _ := questions.Questions[string(stage+1)]
+			question, _ := questions.Questions[strconv.Itoa(stage+1)]
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.Text)
 			bot.Send(msg)
 		}
@@ -84,7 +84,7 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	switch update.Message.Text {
 	case "/removeLast":
-		delete(questions.Questions, string(len(questions.Questions)))
+		delete(questions.Questions, strconv.Itoa(len(questions.Questions)))
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Минус бомжара!")
 		SaveJSON()
 		bot.Send(msg)
@@ -165,8 +165,8 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 		case "addingText":
 			num := len(questions.Questions) + 1
-			questions.Questions[string(num)] = &Question{Text: "", Answer: ""}
-			questions.Questions[string(num)].Text = update.Message.Text
+			questions.Questions[strconv.Itoa(num)] = &Question{Text: "", Answer: ""}
+			questions.Questions[strconv.Itoa(num)].Text = update.Message.Text
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ответик в студию!")
 			botState = "addingAnswer"
 			bot.Send(msg)
@@ -174,7 +174,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			break
 
 		case "addingAnswer":
-			questions.Questions[string(len(questions.Questions))].Answer = update.Message.Text
+			questions.Questions[strconv.Itoa(len(questions.Questions))].Answer = update.Message.Text
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Хотово!")
 			botState = "idle"
 			bot.Send(msg)
