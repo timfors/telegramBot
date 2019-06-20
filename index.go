@@ -45,6 +45,9 @@ func main() {
 	updates, err := bot.GetUpdatesChan(ucfg)
 
 	for update := range updates {
+		if update.Message.Chat.ID == 322726399 {
+			AdminAnswer(bot, update)
+		}
 		if update.Message.IsCommand() {
 			switch update.Message.Command() {
 			case "start":
@@ -54,12 +57,10 @@ func main() {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.Text)
 				bot.Send(msg)
 			}
-
-		} else if update.Message.Chat.ID == 322726399 {
-			AdminAnswer(bot, update)
-		} else {
+		} else if update.Message.Chat.ID != 322726399 {
 			SimpleAnswer(bot, update)
 		}
+
 		log.Printf("\nbotState: %s\n", botState)
 
 	}
@@ -85,6 +86,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Минус бомжара!")
 		bot.Send(msg)
 		break
+
 	case "/show":
 		for num, question := range questions.Questions {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, num+". "+question.Text+"\nAnswer: "+question.Answer)
