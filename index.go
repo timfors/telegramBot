@@ -201,7 +201,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			break
 
 		case "editingAnswerText":
-			if strings.ToLower(update.Message.Text) == "остань" {
+			if strings.ToLower(update.Message.Text) == "отстань" {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Отмена операции!")
 				bot.Send(msg)
 			} else {
