@@ -9,8 +9,8 @@ import (
 )
 
 type Question struct {
-	text   string
-	answer string
+	Text   string
+	Answer string
 }
 
 type Questions struct {
@@ -47,7 +47,7 @@ func main() {
 			case "resetProgress":
 				progresses[update.Message.Chat.ID] = 1
 				question, _ := questions.Questions["0"]
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.text)
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.Text)
 				bot.Send(msg)
 			}
 
@@ -64,12 +64,12 @@ func main() {
 
 func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	stage := progresses[update.Message.Chat.ID]
-	answ := questions.Questions[string(stage)].answer
+	answ := questions.Questions[string(stage)].Answer
 	if strings.ToLower(update.Message.Text) == strings.ToLower(answ) {
 		progresses[update.Message.Chat.ID]++
 		if stage-1 < len(questions.Questions) {
 			question, _ := questions.Questions[string(stage+1)]
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.text)
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.Text)
 			bot.Send(msg)
 		}
 	}
@@ -80,7 +80,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	case "/showAll":
 		for i := 1; i <= len(questions.Questions); i++ {
 			log.Printf("\n%d\n", i)
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, string(i)+". "+questions.Questions[string(i)].text+"\nAnswer: "+questions.Questions[string(i)].answer)
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, string(i)+". "+questions.Questions[string(i)].Text+"\nAnswer: "+questions.Questions[string(i)].Answer)
 			bot.Send(msg)
 		}
 		log.Printf("\nbotState: %s\n", botState)
@@ -120,7 +120,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 		case "editingQuestionText":
 			if len(strings.Split(update.Message.Text, " ")) > 0 {
-				questions.Questions[editQuestionNum].text = update.Message.Text
+				questions.Questions[editQuestionNum].Text = update.Message.Text
 			}
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ну а сейчас меняй ответ. (оставь пустым, если не хочешь изменять)")
 			bot.Send(msg)
@@ -130,7 +130,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 		case "editingQuestionAnswer":
 			if len(strings.Split(update.Message.Text, " ")) > 0 {
-				questions.Questions[editQuestionNum].answer = update.Message.Text
+				questions.Questions[editQuestionNum].Answer = update.Message.Text
 			}
 			botState = "idle"
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Начальник, принимай работу!")
@@ -140,7 +140,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			break
 
 		case "addingText":
-			questions.Questions[string(len(questions.Questions)+1)].text = update.Message.Text
+			questions.Questions[string(len(questions.Questions)+1)].Text = update.Message.Text
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ответик в студию!")
 			botState = "addingAnswer"
 			bot.Send(msg)
@@ -148,7 +148,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			break
 
 		case "addingAnswer":
-			questions.Questions[string(len(questions.Questions))].answer = update.Message.Text
+			questions.Questions[string(len(questions.Questions))].Answer = update.Message.Text
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Хотово!")
 			botState = "idle"
 			bot.Send(msg)

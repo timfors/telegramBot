@@ -1,6 +1,12 @@
-{ 
-	"1": { 
-		"text": "Where are you from?",
-		"answer": "From Georgia"
-	}
+{
+ "Questions": {
+  "1": {
+   "Text": "hihihihi",
+   "Answer": "fsfsad"
+  },
+  "2": {
+   "Text": "allo",
+   "Answer": "hi"
+  }
+ }
 }
