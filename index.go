@@ -50,7 +50,7 @@ func main() {
 			case "start":
 			case "resetProgress":
 				progresses[update.Message.Chat.ID] = 1
-				_, question := questions.Questions["0"]
+				question := questions.Questions["0"]
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.Text)
 				bot.Send(msg)
 			}
