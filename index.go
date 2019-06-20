@@ -55,8 +55,7 @@ func main() {
 				bot.Send(msg)
 			}
 
-		}
-		if update.Message.Chat.ID == 322726399 {
+		} else if update.Message.Chat.ID == 322726399 {
 			AdminAnswer(bot, update)
 		} else {
 			SimpleAnswer(bot, update)
