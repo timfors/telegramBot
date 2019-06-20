@@ -81,6 +81,11 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	switch update.Message.Text {
+	case "/removeLast":
+		delete(questions.Questions, string(len(questions.Questions)))
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Минус бомжара!")
+		bot.Send(msg)
+		break
 	case "/show":
 		for num, question := range questions.Questions {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, num+". "+question.Text+"\nAnswer: "+question.Answer)
@@ -112,9 +117,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 	default:
 		switch botState {
-		case "removeLast":
-			delete(questions.Questions, string(len(questions.Questions)))
-			break
+
 		case "getQuestionNum":
 			editQuestionNum = update.Message.Text
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Теперь на какой текст меняем? (оставь пустым, если не хочешь изменять)")
