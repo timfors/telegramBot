@@ -30,6 +30,9 @@ func main() {
 	err = json.Unmarshal(file, &questions)
 	progresses = map[int64]int{}
 	commands = map[string]string{"/showAll": "show all the questions", "/addQuestion": "add question", "/removeQuestion": "remove question", "/changeQuestion": "changes question"}
+	for _, question := range questions.Questions {
+		log.Printf("\n%+v\n", question)
+	}
 	bot, err := tgbotapi.NewBotAPI("866951564:AAHdOQgN6ZrypN0uraxAijmrDmDGln7bw48")
 	if err != nil {
 		log.Panic(err)
@@ -78,9 +81,8 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	switch update.Message.Text {
 	case "/showAll":
-		for i := 1; i <= len(questions.Questions); i++ {
-			log.Printf("\n%d\n", i)
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, string(i)+". "+questions.Questions[string(i)].Text+"\nAnswer: "+questions.Questions[string(i)].Answer)
+		for num, question := range questions.Questions {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, num+". "+question.Text+"\nAnswer: "+question.Answer)
 			bot.Send(msg)
 		}
 		log.Printf("\nbotState: %s\n", botState)
@@ -163,6 +165,6 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 }
 
 func SaveJSON() {
-	output, _ := json.Marshal(questions)
+	output, _ := json.MarshalIndent(questions, "", " ")
 	ioutil.WriteFile("question.json", output, 0644)
 }
