@@ -47,18 +47,20 @@ func main() {
 	for update := range updates {
 		if update.Message.Chat.ID == 322726399 {
 			AdminAnswer(bot, update)
-		}
-		if update.Message.IsCommand() {
-			switch update.Message.Command() {
-			case "start":
-			case "resetProgress":
-				progresses[update.Message.Chat.ID] = 1
-				question := questions.Questions["1"]
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.Text)
-				bot.Send(msg)
+		} else {
+			if update.Message.IsCommand() {
+				switch update.Message.Command() {
+				case "start":
+				case "resetProgress":
+					progresses[update.Message.Chat.ID] = 1
+					question := questions.Questions["1"]
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.Text)
+					bot.Send(msg)
+				}
+
+			} else {
+				SimpleAnswer(bot, update)
 			}
-		} else if update.Message.Chat.ID != 322726399 {
-			SimpleAnswer(bot, update)
 		}
 
 		log.Printf("\nbotState: %s\n", botState)
@@ -115,6 +117,13 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			bot.Send(msg)
 		}
 		break
+
+	case "/start":
+	case "/resetProgress":
+		progresses[update.Message.Chat.ID] = 1
+		question := questions.Questions["1"]
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.Text)
+		bot.Send(msg)
 
 	default:
 		switch botState {
