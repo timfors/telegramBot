@@ -69,6 +69,9 @@ func main() {
 }
 
 func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+	if progresses[update.Message.Chat.ID] == nil {
+		progresses[update.Message.Chat.ID] = 1
+	}
 	stage := progresses[update.Message.Chat.ID]
 	answ := questions.Questions[strconv.Itoa(stage)].Answer
 	if strings.ToLower(update.Message.Text) == strings.ToLower(answ) {
