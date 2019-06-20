@@ -5,6 +5,7 @@ import (
 	"github.com/Syfaro/telegram-bot-api"
 	"io/ioutil"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -29,7 +30,7 @@ func main() {
 	file, err := ioutil.ReadFile("questions.json")
 	err = json.Unmarshal(file, &questions)
 	progresses = map[int64]int{}
-	commands = map[string]string{"/showAll": "show all the questions", "/addQuestion": "add question", "/removeQuestion": "remove question", "/changeQuestion": "changes question"}
+	commands = map[string]string{"/show": "show all the questions", "/add": "add question", "/removeLast": "remove last question", "/change": "changes question"}
 	for _, question := range questions.Questions {
 		log.Printf("\n%+v\n", question)
 	}
@@ -80,7 +81,7 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	switch update.Message.Text {
-	case "/showAll":
+	case "/show":
 		for num, question := range questions.Questions {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, num+". "+question.Text+"\nAnswer: "+question.Answer)
 			bot.Send(msg)
@@ -88,14 +89,14 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		log.Printf("\nbotState: %s\n", botState)
 		break
 
-	case "/changeQuestion":
+	case "/change":
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Номер вопроса, уважаемый.")
 		botState = "getQuestionNum"
 		bot.Send(msg)
 		log.Printf("\nbotState: %s\n", botState)
 		break
 
-	case "/addQuestion":
+	case "/add":
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Давай вопрос и разойдемся.")
 		botState = "addingText"
 		bot.Send(msg)
@@ -111,12 +112,19 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 	default:
 		switch botState {
-
+		case "removeLast":
+			delete(questions.Questions, string(len(questions.Questions)))
+			break
 		case "getQuestionNum":
 			editQuestionNum = update.Message.Text
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Теперь на какой текст меняем? (оставь пустым, если не хочешь изменять)")
 			bot.Send(msg)
-			botState = "editingQuestionText"
+			num, _ := strconv.ParseInt(editQuestionNum, 10, 64)
+			if num > int64(len(questions.Questions)) {
+				botState = "addingText"
+			} else {
+				botState = "editingQuestionText"
+			}
 			log.Printf("\nbotState: %s\n", botState)
 			break
 
@@ -142,6 +150,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			break
 
 		case "addingText":
+			questions.Questions[string(len(questions.Questions)+1)] = &Question{"", ""}
 			questions.Questions[string(len(questions.Questions)+1)].Text = update.Message.Text
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ответик в студию!")
 			botState = "addingAnswer"
