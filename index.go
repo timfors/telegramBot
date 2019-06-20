@@ -50,7 +50,7 @@ func main() {
 			case "start":
 			case "resetProgress":
 				progresses[update.Message.Chat.ID] = 1
-				question, _ := questions.Questions["0"]
+				_, question := questions.Questions["0"]
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.Text)
 				bot.Send(msg)
 			}
@@ -150,8 +150,9 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			break
 
 		case "addingText":
-			questions.Questions[string(len(questions.Questions)+1)] = &Question{Text: "", Answer: ""}
-			questions.Questions[string(len(questions.Questions)+1)].Text = update.Message.Text
+			num := len(questions.Questions) + 1
+			questions.Questions[string(num)] = &Question{Text: "", Answer: ""}
+			questions.Questions[string(num)].Text = update.Message.Text
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ответик в студию!")
 			botState = "addingAnswer"
 			bot.Send(msg)
