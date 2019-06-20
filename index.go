@@ -86,6 +86,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	case "/removeLast":
 		delete(questions.Questions, string(len(questions.Questions)))
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Минус бомжара!")
+		SaveJSON(questions)
 		bot.Send(msg)
 		break
 
