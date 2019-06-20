@@ -36,8 +36,9 @@ func main() {
 	progresses = map[int64]int{}
 	commands = map[string]string{"/showQ": "show all the questions",
 		"/addQ": "add question", "/removeLastQ": "remove last question",
-		"/changeQ": "changes question", "/changeA": "change an answer",
-		"/addA": "add answer", "removeLastA": "remove last answer"}
+		"/changeQ": "changes question", "/changeA": "change bot answer",
+		"/addA": "add bot answer", "/removeLastA": "remove last bot answer",
+		"/showA": "show all the bot answer"}
 	for _, question := range data.Questions {
 		log.Printf("\n%+v\n", question)
 	}
