@@ -69,7 +69,7 @@ func main() {
 }
 
 func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
-	if progresses[update.Message.Chat.ID] == nil {
+	if progresses[update.Message.Chat.ID] == 0 {
 		progresses[update.Message.Chat.ID] = 1
 	}
 	stage := progresses[update.Message.Chat.ID]
