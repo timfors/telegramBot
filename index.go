@@ -275,7 +275,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ладно, оставляем ответ.")
 				bot.Send(msg)
 			} else {
-				data.Questions[editQuestionNum].Answer = update.Message.Text
+				data.Questions[editQuestionNum].Hint = update.Message.Text
 			}
 			botState = "idle"
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Начальник, принимай работу!")
