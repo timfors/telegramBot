@@ -20,7 +20,7 @@ type Question struct {
 type Data struct {
 	Questions map[string]*Question
 	Answers   map[string]string
-	HintTimer int
+	HintTimer string
 }
 
 var incorrectAnsw map[int]string
@@ -140,7 +140,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		break
 
 	case "/showH":
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ожидание перед подсказкой: "+strconv.Itoa(data.HintTimer))
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ожидание перед подсказкой: "+data.HintTimer)
 		bot.Send(msg)
 		break
 
@@ -190,11 +190,11 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		switch botState {
 		case "changeHintTimer":
 			num, err := strconv.ParseInt(update.Message.Text, 10, 64)
-			data.HintTimer = int(num)
 			if err != nil {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Это не число!Сворачиваемся!")
 				bot.Send(msg)
 			} else {
+				data.HintTimer = strconv.Itoa(int(num))
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Окес!")
 				SaveJSON()
 				bot.Send(msg)
@@ -263,8 +263,8 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			} else {
 				data.Questions[editQuestionNum].Answer = update.Message.Text
 			}
-			botState = "idle"
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Начальник, принимай работу!")
+			botState = "editingQuestionHint"
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Теперь подсказка")
 			bot.Send(msg)
 			SaveJSON()
 			log.Printf("\nbotState: %s\n", botState)
@@ -332,7 +332,8 @@ func SaveJSON() {
 }
 
 func hintTimer(bot *tgbotapi.BotAPI, chatId int64, progress int) {
-	time.Sleep(time.Duration(data.HintTimer) * time.Minute)
+	duration, _ := strconv.ParseInt(data.HintTimer, 10, 64)
+	time.Sleep(time.Duration(duration) * time.Minute)
 	if progresses[chatId] == progress {
 		msg := tgbotapi.NewMessage(chatId, "Подсказка:"+data.Questions[strconv.Itoa(progress)].Hint)
 		bot.Send(msg)
