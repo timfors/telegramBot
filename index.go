@@ -133,7 +133,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 	case "/showQ":
 		for i := 1; i <= len(data.Questions); i++ {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, strconv.Itoa(i)+". "+data.Questions[strconv.Itoa(i)].Text+"\nAnswer: "+data.Questions[strconv.Itoa(i)].Answer)
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, strconv.Itoa(i)+". "+data.Questions[strconv.Itoa(i)].Text+"\nAnswer: "+data.Questions[strconv.Itoa(i)].Answer+"\nHint: "+data.Questions[strconv.Itoa(i)].Hint)
 			bot.Send(msg)
 		}
 		log.Printf("\nbotState: %s\n", botState)
@@ -244,7 +244,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			break
 
 		case "editingQuestionText":
-			if strings.ToLower(update.Message.Text) == "остань" {
+			if strings.ToLower(update.Message.Text) == "отстань" {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Допустим не меняем текст!")
 				bot.Send(msg)
 			} else {
@@ -257,7 +257,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			break
 
 		case "editingQuestionAnswer":
-			if strings.ToLower(update.Message.Text) == "остань" {
+			if strings.ToLower(update.Message.Text) == "отстань" {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ладно, оставляем ответ.")
 				bot.Send(msg)
 			} else {
@@ -271,7 +271,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			break
 
 		case "editingQuestionHint":
-			if strings.ToLower(update.Message.Text) == "остань" {
+			if strings.ToLower(update.Message.Text) == "отстань" {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ладно, оставляем ответ.")
 				bot.Send(msg)
 			} else {
