@@ -8,16 +8,19 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Question struct {
 	Text   string
 	Answer string
+	Hint   string
 }
 
 type Data struct {
 	Questions map[string]*Question
 	Answers   map[string]string
+	HintTimer int64
 }
 
 var incorrectAnsw map[int]string
@@ -58,8 +61,9 @@ func main() {
 		} else {
 			if update.Message.IsCommand() {
 				switch update.Message.Command() {
-				case "resetProgress", "start":
+				case "reset_progress", "start":
 					progresses[update.Message.Chat.ID] = 1
+					go hintTimer(bot, update.Message.Chat.ID, progresses[update.Message.Chat.ID])
 					question := data.Questions["1"]
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.Text)
 					bot.Send(msg)
@@ -83,6 +87,7 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	answ := data.Questions[strconv.Itoa(stage)].Answer
 	if strings.ToLower(update.Message.Text) == strings.ToLower(answ) {
 		progresses[update.Message.Chat.ID]++
+		go hintTimer(bot, update.Message.Chat.ID, progresses[update.Message.Chat.ID])
 		if stage-1 < len(data.Questions) {
 			question, _ := data.Questions[strconv.Itoa(stage+1)]
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.Text)
@@ -97,6 +102,12 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	switch update.Message.Text {
+
+	case "/changeHintTimer":
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выкладывай, сколько ждать перед подсказкой?")
+		botState = "changeHintTimer"
+		bot.Send(msg)
+
 	case "/removeLastA":
 		delete(data.Answers, strconv.Itoa(len(data.Answers)))
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Пока, ответик!")
@@ -112,19 +123,24 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		break
 
 	case "/showA":
-		for num, answ := range data.Answers {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, num+". "+answ)
+		for i := 1; i <= len(data.Answers); i++ {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, strconv.Itoa(i)+". "+data.Answers[strconv.Itoa(i)])
 			bot.Send(msg)
 		}
 		log.Printf("\nbotState: %s\n", botState)
 		break
 
 	case "/showQ":
-		for num, question := range data.Questions {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, num+". "+question.Text+"\nAnswer: "+question.Answer)
+		for i := 1; i <= len(data.Questions); i++ {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, strconv.Itoa(i)+". "+data.Questions[strconv.Itoa(i)].Text+"\nAnswer: "+data.Questions[strconv.Itoa(i)].Answer)
 			bot.Send(msg)
 		}
 		log.Printf("\nbotState: %s\n", botState)
+		break
+
+	case "/showH":
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ожидание перед подсказкой: "+strconv.Itoa(int(data.HintTimer)))
+		bot.Send(msg)
 		break
 
 	case "/changeA":
@@ -162,7 +178,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		}
 		break
 
-	case "/resetProgress", "/start":
+	case "/reset_progress", "/start":
 		progresses[update.Message.Chat.ID] = 1
 		question := data.Questions["1"]
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, question.Text)
@@ -170,7 +186,12 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 	default:
 		switch botState {
-
+		case "changeHintTimer":
+			data.HintTimer, _ = strconv.ParseInt(update.Message.Text, 10, 64)
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Окес!")
+			botState = "idle"
+			SaveJSON()
+			bot.Send(msg)
 		case "getAnswerNum":
 			editAnswerNum = update.Message.Text
 			num, _ := strconv.ParseInt(editAnswerNum, 10, 64)
@@ -241,6 +262,20 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			log.Printf("\nbotState: %s\n", botState)
 			break
 
+		case "editingQuestionHint":
+			if strings.ToLower(update.Message.Text) == "остань" {
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Ладно, оставляем ответ.")
+				bot.Send(msg)
+			} else {
+				data.Questions[editQuestionNum].Answer = update.Message.Text
+			}
+			botState = "idle"
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Начальник, принимай работу!")
+			bot.Send(msg)
+			SaveJSON()
+			log.Printf("\nbotState: %s\n", botState)
+			break
+
 		case "addingAnswerText":
 			num := len(data.Answers) + 1
 			data.Answers[strconv.Itoa(num)] = ""
@@ -263,13 +298,20 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 		case "addingQuestionAnswer":
 			data.Questions[strconv.Itoa(len(data.Questions))].Answer = update.Message.Text
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Давай теперь подсказку!(пиши ОТСТАНЬ, если не хочешь добавлять)")
+			botState = "addingQuestionHint"
+			bot.Send(msg)
+			log.Printf("\nbotState: %s\n", botState)
+			break
+
+		case "addingQuestionHint":
+			data.Questions[strconv.Itoa(len(data.Questions))].Answer = update.Message.Text
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Вопрос создан!")
 			botState = "idle"
 			bot.Send(msg)
 			SaveJSON()
 			log.Printf("\nbotState: %s\n", botState)
 			break
-
 		case "idle":
 			SimpleAnswer(bot, update)
 		}
@@ -279,4 +321,12 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 func SaveJSON() {
 	output, _ := json.MarshalIndent(data, "", " ")
 	ioutil.WriteFile("data.json", output, 0644)
+}
+
+func hintTimer(bot *tgbotapi.BotAPI, chatId int64, progress int) {
+	time.Sleep(time.Duration(data.HintTimer) * time.Minute)
+	if progresses[chatId] == progress {
+		msg := tgbotapi.NewMessage(chatId, data.Questions[strconv.Itoa(progress)].Hint)
+		bot.Send(msg)
+	}
 }
