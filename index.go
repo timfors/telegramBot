@@ -330,7 +330,7 @@ func SaveJSON() {
 	output, _ := json.MarshalIndent(data, "", " ")
 	ioutil.WriteFile("data.json", output, 0644)
 	updatedJson, _ := ioutil.ReadFile("data.json")
-	log.Printf("\n%b\n", updatedJson)
+	log.Printf(string(updatedJson))
 }
 
 func hintTimer(bot *tgbotapi.BotAPI, chatId int64, progress int) {
