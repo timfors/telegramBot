@@ -309,7 +309,7 @@ func SetHintTimer(bot *tgbotapi.BotAPI, chatId int64, progress int) {
 	currentProgress, _ := FindProgress(int(chatId))
 	question, _ := FindQuestion(progress)
 	if currentProgress.Progress == progress {
-		msg := tgbotapi.NewMessage(chatId, "Подсказка:"+question.Hint)
+		msg := tgbotapi.NewMessage(chatId, question.Hint)
 		bot.Send(msg)
 	}
 }
