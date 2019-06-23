@@ -411,7 +411,7 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			progress, _ = FindProgress(int(userId))
 			progress.Progress++
 			ChangeProgress(progress)
-			if stage < len(questions)-1 {
+			if stage < len(questions) {
 				go SetHintTimer(bot, userId, progress.Progress)
 				question, err := FindQuestion(stage + 1)
 				if err != nil {
