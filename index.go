@@ -40,13 +40,13 @@ type Progress struct {
 
 var botState string
 
-var answers []BotAnswer
-var newAnswer BotAnswer
+var answers []*BotAnswer
+var newAnswer *BotAnswer
 
-var questions []Question
-var newQuestion Question
+var questions []*Question
+var newQuestion *Question
 
-var progresses []Progress
+var progresses []*Progress
 var newProgress Progress
 
 var hintTimer HintTimer
@@ -81,14 +81,14 @@ func GetCollection(name string) *mongo.Collection {
 	return client.Database("Data").Collection(name)
 }
 
-func AddProgress(progress Progress) {
+func AddProgress(progress *Progress) {
 	_, err := GetCollection("Progresses").InsertOne(context.TODO(), progress)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("Added!")
 }
-func ChangeProgress(progress Progress) {
+func ChangeProgress(progress *Progress) {
 	filter := bson.D{{"id", progress.Id}}
 	update := bson.D{{"$set", progress}}
 	_, err := GetCollection("Progresses").UpdateOne(context.TODO(), filter, update)
@@ -98,8 +98,8 @@ func ChangeProgress(progress Progress) {
 	log.Println("Changed!")
 }
 
-func UpdateProgresses() []Progress {
-	var progresses []Progress
+func UpdateProgresses() []*Progress {
+	var progresses []*Progress
 	options := options.Find()
 	filter := bson.M{}
 	cur, err := GetCollection("Progresses").Find(context.TODO(), filter, options)
@@ -112,7 +112,7 @@ func UpdateProgresses() []Progress {
 		if err != nil {
 			log.Fatal(err)
 		}
-		progresses = append(progresses, elem)
+		progresses = append(progresses, &elem)
 	}
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
@@ -122,13 +122,13 @@ func UpdateProgresses() []Progress {
 	return progresses
 }
 
-func FindProgress(userId int) (Progress, error) {
+func FindProgress(userId int) (*Progress, error) {
 	for _, progress := range progresses {
 		if progress.Id == userId {
 			return progress, nil
 		}
 	}
-	return Progress{}, errors.New("No such progress")
+	return &Progress{}, errors.New("No such progress")
 }
 func ChangeToken(token Token) {
 	filter := bson.D{}
@@ -172,7 +172,7 @@ func UpdateHintTimer() HintTimer {
 	return hintTimer
 }
 
-func AddBotAnswer(answer BotAnswer) {
+func AddBotAnswer(answer *BotAnswer) {
 	_, err := GetCollection("BotAnswers").InsertOne(context.TODO(), answer)
 	if err != nil {
 		log.Fatal(err)
@@ -203,8 +203,8 @@ func RemoveLastBotAnswer() {
 	log.Println("Removed!")
 }
 
-func UpdateBotAnswers() []BotAnswer {
-	var answers []BotAnswer
+func UpdateBotAnswers() []*BotAnswer {
+	var answers []*BotAnswer
 	options := options.Find()
 	filter := bson.D{}
 
@@ -219,7 +219,7 @@ func UpdateBotAnswers() []BotAnswer {
 		if err != nil {
 			log.Fatal(err)
 		}
-		answers = append(answers, elem)
+		answers = append(answers, &elem)
 	}
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
@@ -229,16 +229,16 @@ func UpdateBotAnswers() []BotAnswer {
 	return answers
 }
 
-func FindBotAnswer(num int) (BotAnswer, error) {
+func FindBotAnswer(num int) (*BotAnswer, error) {
 	for _, answer := range answers {
 		if answer.Number == num {
 			return answer, nil
 		}
 	}
-	return BotAnswer{}, errors.New("No such bot answers")
+	return &BotAnswer{}, errors.New("No such bot answers")
 }
 
-func AddQuestion(question Question) {
+func AddQuestion(question *Question) {
 	_, err := GetCollection("Questions").InsertOne(context.TODO(), question)
 	if err != nil {
 		log.Fatal(err)
@@ -246,7 +246,7 @@ func AddQuestion(question Question) {
 	log.Println("Added!")
 }
 
-func ChangeQuestion(question Question) {
+func ChangeQuestion(question *Question) {
 	filter := bson.D{{"number", question.Number}}
 	update := bson.D{{"$set", question}}
 	_, err := GetCollection("Questions").UpdateOne(context.TODO(), filter, update)
@@ -269,8 +269,8 @@ func RemoveLastQuestion() {
 	log.Println("Removed!")
 }
 
-func UpdateQuestions() []Question {
-	var questions []Question
+func UpdateQuestions() []*Question {
+	var questions []*Question
 	options := options.Find()
 	filter := bson.D{}
 
@@ -285,7 +285,7 @@ func UpdateQuestions() []Question {
 		if err != nil {
 			log.Fatal(err)
 		}
-		questions = append(questions, elem)
+		questions = append(questions, &elem)
 		if err := cur.Err(); err != nil {
 			log.Fatal(err)
 		}
@@ -295,13 +295,13 @@ func UpdateQuestions() []Question {
 	return questions
 }
 
-func FindQuestion(num int) (Question, error) {
+func FindQuestion(num int) (*Question, error) {
 	for _, question := range questions {
 		if question.Number == num {
 			return question, nil
 		}
 	}
-	return Question{}, errors.New("No such questions")
+	return &Question{}, errors.New("No such questions")
 }
 
 func SetHintTimer(bot *tgbotapi.BotAPI, chatId int64, progress int) {
@@ -312,6 +312,14 @@ func SetHintTimer(bot *tgbotapi.BotAPI, chatId int64, progress int) {
 		msg := tgbotapi.NewMessage(chatId, "Подсказка:"+question.Hint)
 		bot.Send(msg)
 	}
+}
+
+func TokenGenerator(len int) string {
+	bytes := make([]byte, len)
+	for i := 0; i < len; i++ {
+		bytes[i] = byte(65 + rand.Intn(57)) //A=65 and Z = 65+25
+	}
+	return string(bytes)
 }
 
 func main() {
@@ -349,7 +357,7 @@ func main() {
 				case "reset_progress", "start":
 
 					newProgress, err := FindProgress(int(userId))
-					newProgress = Progress{int(userId), 1}
+					newProgress = &Progress{int(userId), 1}
 					if err != nil {
 						AddProgress(newProgress)
 					} else {
@@ -405,6 +413,11 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	input := update.Message.Text
 	userId := update.Message.Chat.ID
 	switch input {
+	case "/token":
+		token.Token = TokenGenerator(10)
+		ChangeToken(token)
+		msg := tgbotapi.NewMessage(userId, "Новый токен: "+token.Token)
+		bot.Send(msg)
 
 	case "/changeHintTimer":
 		msg := tgbotapi.NewMessage(userId, "Выкладывай, сколько ждать перед подсказкой?")
@@ -463,7 +476,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		break
 
 	case "/addA":
-		newAnswer = BotAnswer{}
+		newAnswer = &BotAnswer{}
 		msg := tgbotapi.NewMessage(userId, "Давай ответ и чики брики.")
 		botState = "addingAnswerText"
 		bot.Send(msg)
@@ -471,7 +484,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		break
 
 	case "/addQ":
-		newQuestion = Question{}
+		newQuestion = &Question{}
 		msg := tgbotapi.NewMessage(userId, "Давай вопрос и разойдемся.")
 		botState = "addingQuestionText"
 		bot.Send(msg)
@@ -487,7 +500,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 	case "/reset_progress", "/start":
 		newProgress, err := FindProgress(int(userId))
-		newProgress = Progress{int(userId), 1}
+		newProgress = &Progress{int(userId), 1}
 		if err != nil {
 			AddProgress(newProgress)
 		} else {
