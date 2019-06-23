@@ -389,8 +389,6 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		if input == token.Token {
 			progress.Progress++
 			ChangeProgress(progress)
-			token.Token = TokenGenerator(10)
-			ChangeToken(token)
 			go SetHintTimer(bot, userId, progress.Progress)
 			question, err := FindQuestion(2)
 			if err != nil {
