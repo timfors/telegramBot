@@ -180,7 +180,7 @@ func AddBotAnswer(answer *BotAnswer) {
 	log.Println("Added!")
 }
 
-func ChangeBotAnswer(answer BotAnswer) {
+func ChangeBotAnswer(answer *BotAnswer) {
 	filter := bson.D{{"number", answer.Number}}
 	update := bson.D{{"$set", answer}}
 	_, err := GetCollection("BotAnswers").UpdateOne(context.TODO(), filter, update)
@@ -336,7 +336,7 @@ func main() {
 		"/changeQ": "changes question", "/changeA": "change bot answer",
 		"/addA": "add bot answer", "/removeLastA": "remove last bot answer",
 		"/showA": "show all the bot answer", "/showH": "show hint timer",
-		"/changeHintTimer": "change hint timer"}
+		"/changeHintTimer": "change hint timer", "/token": "generate new token"}
 	bot, err := tgbotapi.NewBotAPI("866951564:AAHdOQgN6ZrypN0uraxAijmrDmDGln7bw48")
 	if err != nil {
 		log.Panic(err)
@@ -355,9 +355,8 @@ func main() {
 			if update.Message.IsCommand() {
 				switch update.Message.Command() {
 				case "reset_progress", "start":
-
 					newProgress, err := FindProgress(int(userId))
-					newProgress = &Progress{int(userId), 1}
+					newProgress = &Progress{int(userId), 0}
 					if err != nil {
 						AddProgress(newProgress)
 					} else {
@@ -365,7 +364,7 @@ func main() {
 					}
 					progresses = UpdateProgresses()
 					go SetHintTimer(bot, userId, newProgress.Progress)
-					question, _ := FindQuestion(1)
+					question, _ := FindQuestion(0)
 					msg := tgbotapi.NewMessage(userId, question.Text)
 					bot.Send(msg)
 				}
@@ -381,31 +380,50 @@ func main() {
 }
 
 func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
+	input := update.Message.Text
 	userId := update.Message.Chat.ID
 	progress, _ := FindProgress(int(userId))
-	stage := progress.Progress
-	question, err := FindQuestion(stage)
-	answ := question.Answer
-	if err != nil {
-		log.Fatal(err)
-	}
-	if strings.ToLower(update.Message.Text) == strings.ToLower(answ) {
-		progress, _ = FindProgress(int(userId))
-		progress.Progress++
-		if stage < len(questions) {
+	if progress.Progress == 0 {
+		if input == token.Token {
+			progress.Progress++
+			token.Token = TokenGenerator(10)
+			ChangeToken(token)
 			go SetHintTimer(bot, userId, progress.Progress)
-			question, err := FindQuestion(stage + 1)
+			question, err := FindQuestion(1)
 			if err != nil {
 				log.Fatal(err)
 			}
 			msg := tgbotapi.NewMessage(userId, question.Text)
 			bot.Send(msg)
+		} else {
+			msg := tgbotapi.NewMessage(userId, "Пароль неверный!")
+			bot.Send(msg)
 		}
 	} else {
-		answerNum := rand.Intn(len(answers)) + 1
-		botAnswer, _ := FindBotAnswer(answerNum)
-		msg := tgbotapi.NewMessage(userId, botAnswer.Text)
-		bot.Send(msg)
+		stage := progress.Progress
+		question, err := FindQuestion(stage)
+		answ := question.Answer
+		if err != nil {
+			log.Fatal(err)
+		}
+		if strings.ToLower(input) == strings.ToLower(answ) {
+			progress, _ = FindProgress(int(userId))
+			progress.Progress++
+			if stage < len(questions)-1 {
+				go SetHintTimer(bot, userId, progress.Progress)
+				question, err := FindQuestion(stage + 1)
+				if err != nil {
+					log.Fatal(err)
+				}
+				msg := tgbotapi.NewMessage(userId, question.Text)
+				bot.Send(msg)
+			}
+		} else {
+			answerNum := rand.Intn(len(answers)) + 1
+			botAnswer, _ := FindBotAnswer(answerNum)
+			msg := tgbotapi.NewMessage(userId, botAnswer.Text)
+			bot.Send(msg)
+		}
 	}
 }
 
@@ -576,7 +594,9 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 				bot.Send(msg)
 			} else {
 				newAnswer.Text = input
+				ChangeBotAnswer(newAnswer)
 			}
+			answers = UpdateBotAnswers()
 			bot.Send(msg)
 			botState = "idle"
 			log.Printf("\nbotState: %s\n", botState)
@@ -627,7 +647,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			newAnswer.Number = len(answers) + 1
 			newAnswer.Text = input
 			AddBotAnswer(newAnswer)
-			UpdateBotAnswers()
+			answers = UpdateBotAnswers()
 			msg := tgbotapi.NewMessage(userId, "Вроде все.")
 			botState = "idle"
 			bot.Send(msg)
@@ -645,7 +665,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 		case "addingQuestionAnswer":
 			newQuestion.Answer = input
-			msg := tgbotapi.NewMessage(userId, "Давай теперь подсказку!(пиши ОТСТАНЬ, если не хочешь добавлять)")
+			msg := tgbotapi.NewMessage(userId, "Давай теперь подсказку!")
 			botState = "addingQuestionHint"
 			bot.Send(msg)
 			log.Printf("\nbotState: %s\n", botState)
