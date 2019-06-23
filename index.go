@@ -164,7 +164,7 @@ func ChangeHintTimer(hintTimer HintTimer) {
 func UpdateHintTimer() HintTimer {
 	var hintTimer HintTimer
 	filter := bson.D{}
-	err := GetCollection("HintTimer").FindOne(context.TODO(), filter).Decode(&token)
+	err := GetCollection("HintTimer").FindOne(context.TODO(), filter).Decode(&hintTimer)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -363,8 +363,8 @@ func main() {
 						ChangeProgress(newProgress)
 					}
 					progresses = UpdateProgresses()
-					question, err := FindQuestion(1)
-					if err != nil {
+					question, err1 := FindQuestion(1)
+					if err1 != nil {
 						log.Fatal(err)
 					}
 					msg := tgbotapi.NewMessage(userId, question.Text)
