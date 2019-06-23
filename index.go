@@ -363,10 +363,7 @@ func main() {
 						ChangeProgress(newProgress)
 					}
 					progresses = UpdateProgresses()
-					go SetHintTimer(bot, userId, newProgress.Progress)
-					question, _ := FindQuestion(1)
-					msg := tgbotapi.NewMessage(userId, question.Text)
-					bot.Send(msg)
+					SimpleAnswer(bot, update)
 				}
 
 			} else {
@@ -386,6 +383,7 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	if progress.Progress == 1 {
 		if input == token.Token {
 			progress.Progress++
+			ChangeProgress(progress)
 			token.Token = TokenGenerator(10)
 			ChangeToken(token)
 			go SetHintTimer(bot, userId, progress.Progress)
@@ -409,6 +407,7 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		if strings.ToLower(input) == strings.ToLower(answ) {
 			progress, _ = FindProgress(int(userId))
 			progress.Progress++
+			ChangeProgress(progress)
 			if stage < len(questions)-1 {
 				go SetHintTimer(bot, userId, progress.Progress)
 				question, err := FindQuestion(stage + 1)
