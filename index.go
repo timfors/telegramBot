@@ -387,7 +387,7 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			token.Token = TokenGenerator(10)
 			ChangeToken(token)
 			go SetHintTimer(bot, userId, progress.Progress)
-			question, err := FindQuestion(1)
+			question, err := FindQuestion(2)
 			if err != nil {
 				log.Fatal(err)
 			}
