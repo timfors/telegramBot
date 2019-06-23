@@ -363,7 +363,12 @@ func main() {
 						ChangeProgress(newProgress)
 					}
 					progresses = UpdateProgresses()
-					SimpleAnswer(bot, update)
+					question, err := FindQuestion(2)
+					if err != nil {
+						log.Fatal(err)
+					}
+					msg := tgbotapi.NewMessage(userId, question.Text)
+					bot.Send(msg)
 				}
 
 			} else {
