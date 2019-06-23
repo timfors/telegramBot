@@ -356,7 +356,7 @@ func main() {
 				switch update.Message.Command() {
 				case "reset_progress", "start":
 					newProgress, err := FindProgress(int(userId))
-					newProgress = &Progress{int(userId), 0}
+					newProgress = &Progress{int(userId), 1}
 					if err != nil {
 						AddProgress(newProgress)
 					} else {
@@ -364,7 +364,7 @@ func main() {
 					}
 					progresses = UpdateProgresses()
 					go SetHintTimer(bot, userId, newProgress.Progress)
-					question, _ := FindQuestion(0)
+					question, _ := FindQuestion(1)
 					msg := tgbotapi.NewMessage(userId, question.Text)
 					bot.Send(msg)
 				}
@@ -383,7 +383,7 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	input := update.Message.Text
 	userId := update.Message.Chat.ID
 	progress, _ := FindProgress(int(userId))
-	if progress.Progress == 0 {
+	if progress.Progress == 1 {
 		if input == token.Token {
 			progress.Progress++
 			token.Token = TokenGenerator(10)
