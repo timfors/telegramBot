@@ -363,7 +363,7 @@ func main() {
 						ChangeProgress(newProgress)
 					}
 					progresses = UpdateProgresses()
-					question, err := FindQuestion(2)
+					question, err := FindQuestion(1)
 					if err != nil {
 						log.Fatal(err)
 					}
