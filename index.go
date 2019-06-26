@@ -57,7 +57,7 @@ var commands map[string]string
 var client *mongo.Client
 
 func ConnectToDB() *mongo.Client {
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://timfors:weas2222_@telegrambot-jeihk.mongodb.net/test?retryWrites=true&w=majority"))
+	client, err := mongo.NewClient(options.Client().ApplyURI(""))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -351,7 +351,7 @@ func main() {
 		"/showA": "show all the bot answer", "/showH": "show hint timer",
 		"/changeHintTimer": "change hint timer", "/token": "generate new token",
 		"/showT": "show the token"}
-	bot, err := tgbotapi.NewBotAPI("642526493:AAF36-uzBa57Af1gUDcQBIWKodS8J4Ao8E8")
+	bot, err := tgbotapi.NewBotAPI("")
 	if err != nil {
 		log.Panic(err)
 	}
