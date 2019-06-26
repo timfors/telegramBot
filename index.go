@@ -17,8 +17,8 @@ import (
 type Question struct {
 	Number int
 	Text   string
-	Answer string
-	Hint   string
+	Answer []string
+	Hint   []string
 }
 
 type BotAnswer struct {
@@ -34,7 +34,7 @@ type Token struct {
 }
 
 type Progress struct {
-	Id       int
+	Id       string
 	Progress int
 }
 
@@ -57,7 +57,7 @@ var commands map[string]string
 var client *mongo.Client
 
 func ConnectToDB() *mongo.Client {
-	client, err := mongo.NewClient(options.Client().ApplyURI("DB_URI"))
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb+srv://timfors:weas2222_@telegrambot-jeihk.mongodb.net/test?retryWrites=true&w=majority"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -122,7 +122,7 @@ func UpdateProgresses() []*Progress {
 	return progresses
 }
 
-func FindProgress(userId int) (*Progress, error) {
+func FindProgress(userId string) (*Progress, error) {
 	for _, progress := range progresses {
 		if progress.Id == userId {
 			return progress, nil
@@ -304,13 +304,17 @@ func FindQuestion(num int) (*Question, error) {
 	return &Question{}, errors.New("No such questions")
 }
 
-func SetHintTimer(bot *tgbotapi.BotAPI, chatId int64, progress int) {
+func SetHintTimer(bot *tgbotapi.BotAPI, chatId int64, userName string, progress int, hintCount int) {
 	time.Sleep(time.Duration(hintTimer.Time) * time.Minute)
-	currentProgress, _ := FindProgress(int(chatId))
+	currentProgress, _ := FindProgress(userName)
 	question, _ := FindQuestion(progress)
 	if currentProgress.Progress == progress {
-		msg := tgbotapi.NewMessage(chatId, question.Hint)
+		msg := tgbotapi.NewMessage(chatId, question.Hint[hintCount])
 		bot.Send(msg)
+	}
+	if hintCount < len(question.Hint) {
+		hintCount++
+		SetHintTimer(bot, chatId, userName, progress, hintCount)
 	}
 }
 
@@ -320,6 +324,15 @@ func TokenGenerator(len int) string {
 		bytes[i] = byte(65 + rand.Intn(57)) //A=65 and Z = 65+25
 	}
 	return string(bytes)
+}
+
+func CheckAnswer(userAnswer string, correctAnswers []string) bool {
+	for _, correctAnswer := range correctAnswers {
+		if strings.ToLower(strings.TrimSpace(userAnswer)) == strings.ToLower(strings.TrimSpace(correctAnswer)) {
+			return true
+		}
+	}
+	return false
 }
 
 func main() {
@@ -336,8 +349,9 @@ func main() {
 		"/changeQ": "changes question", "/changeA": "change bot answer",
 		"/addA": "add bot answer", "/removeLastA": "remove last bot answer",
 		"/showA": "show all the bot answer", "/showH": "show hint timer",
-		"/changeHintTimer": "change hint timer", "/token": "generate new token"}
-	bot, err := tgbotapi.NewBotAPI("Bot_Token")
+		"/changeHintTimer": "change hint timer", "/token": "generate new token",
+		"/showT": "show the token"}
+	bot, err := tgbotapi.NewBotAPI("642526493:AAF36-uzBa57Af1gUDcQBIWKodS8J4Ao8E8")
 	if err != nil {
 		log.Panic(err)
 	}
@@ -348,15 +362,16 @@ func main() {
 	updates, err := bot.GetUpdatesChan(ucfg)
 
 	for update := range updates {
+		userName := update.Message.Chat.UserName
 		userId := update.Message.Chat.ID
-		if userId == 322726399 || userId == 479731828 {
+		if userName == "timkhab" || userId == 479731828 {
 			AdminAnswer(bot, update)
 		} else {
 			if update.Message.IsCommand() {
 				switch update.Message.Command() {
 				case "reset_progress", "start":
-					newProgress, err := FindProgress(int(userId))
-					newProgress = &Progress{int(userId), 1}
+					newProgress, err := FindProgress(userName)
+					newProgress = &Progress{userName, 1}
 					if err != nil {
 						AddProgress(newProgress)
 					} else {
@@ -383,13 +398,14 @@ func main() {
 
 func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	input := update.Message.Text
+	userName := update.Message.Chat.UserName
 	userId := update.Message.Chat.ID
-	progress, _ := FindProgress(int(userId))
+	progress, _ := FindProgress(userName)
 	if progress.Progress == 1 {
 		if input == token.Token {
 			progress.Progress++
 			ChangeProgress(progress)
-			go SetHintTimer(bot, userId, progress.Progress)
+			go SetHintTimer(bot, userId, userName, progress.Progress, 0)
 			question, err := FindQuestion(2)
 			if err != nil {
 				log.Fatal(err)
@@ -407,12 +423,12 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if strings.ToLower(input) == strings.ToLower(answ) {
-			progress, _ = FindProgress(int(userId))
+		if CheckAnswer(input, answ) {
+			progress, _ = FindProgress(userName)
 			progress.Progress++
 			ChangeProgress(progress)
 			if stage < len(questions) {
-				go SetHintTimer(bot, userId, progress.Progress)
+				go SetHintTimer(bot, userId, userName, progress.Progress, 0)
 				question, err := FindQuestion(stage + 1)
 				if err != nil {
 					log.Fatal(err)
@@ -431,6 +447,7 @@ func SimpleAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	input := update.Message.Text
+	userName := update.Message.Chat.UserName
 	userId := update.Message.Chat.ID
 	switch input {
 	case "/token":
@@ -470,10 +487,23 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 	case "/showQ":
 		for i := 1; i <= len(questions); i++ {
 			question, _ := FindQuestion(i)
-			msg := tgbotapi.NewMessage(userId, strconv.Itoa(i)+". "+question.Text+"\nAnswer: "+question.Answer+"\nHint: "+question.Hint)
+			output := strconv.Itoa(i) + ". " + question.Text + "\nAnswers: "
+			for _, answer := range question.Answer {
+				output += answer + " | "
+			}
+			output += "\nHints:"
+			for _, hint := range question.Hint {
+				output += hint + " | "
+			}
+			msg := tgbotapi.NewMessage(userId, output)
 			bot.Send(msg)
 		}
 		log.Printf("\nbotState: %s\n", botState)
+		break
+
+	case "/showT":
+		msg := tgbotapi.NewMessage(userId, "Токен: "+token.Token)
+		bot.Send(msg)
 		break
 
 	case "/showH":
@@ -519,15 +549,15 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		break
 
 	case "/reset_progress", "/start":
-		newProgress, err := FindProgress(int(userId))
-		newProgress = &Progress{int(userId), 1}
+		newProgress, err := FindProgress(userName)
+		newProgress = &Progress{userName, 1}
 		if err != nil {
 			AddProgress(newProgress)
 		} else {
 			ChangeProgress(newProgress)
 		}
 		progresses = UpdateProgresses()
-		go SetHintTimer(bot, userId, newProgress.Progress)
+		go SetHintTimer(bot, userId, userName, newProgress.Progress, 0)
 		question, _ := FindQuestion(1)
 		msg := tgbotapi.NewMessage(userId, question.Text)
 		bot.Send(msg)
@@ -611,7 +641,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 			} else {
 				newQuestion.Text = input
 			}
-			msg := tgbotapi.NewMessage(userId, "Ну а сейчас меняй ответ. (пиши -, если не хочешь изменять)")
+			msg := tgbotapi.NewMessage(userId, "Ну а сейчас меняй ответ.Если хочешь несколько , то ставь между ответами | (пиши -, если не хочешь изменять)")
 			bot.Send(msg)
 			botState = "editingQuestionAnswer"
 			log.Printf("\nbotState: %s\n", botState)
@@ -622,10 +652,10 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 				msg := tgbotapi.NewMessage(userId, "Ладно, оставляем ответ.")
 				bot.Send(msg)
 			} else {
-				newQuestion.Answer = input
+				newQuestion.Answer = strings.Split(input, "|")
 			}
 			botState = "editingQuestionHint"
-			msg := tgbotapi.NewMessage(userId, "Теперь подсказка. (пиши -, если не хочешь изменять)")
+			msg := tgbotapi.NewMessage(userId, "Теперь подсказка.Если хочешь несколько , то ставь между подсказками | (пиши -, если не хочешь изменять)")
 			bot.Send(msg)
 			log.Printf("\nbotState: %s\n", botState)
 			break
@@ -635,7 +665,7 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 				msg := tgbotapi.NewMessage(userId, "Ладно,  подсказку не трогаем.")
 				bot.Send(msg)
 			} else {
-				newQuestion.Hint = input
+				newQuestion.Hint = strings.Split(input, "|")
 			}
 			botState = "idle"
 			msg := tgbotapi.NewMessage(userId, "Начальник, принимай работу!")
@@ -659,22 +689,22 @@ func AdminAnswer(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		case "addingQuestionText":
 			newQuestion.Number = len(questions) + 1
 			newQuestion.Text = input
-			msg := tgbotapi.NewMessage(userId, "Ответик в студию!")
+			msg := tgbotapi.NewMessage(userId, "Ответик в студию!Если хочешь несколько , то ставь между ответами |")
 			botState = "addingQuestionAnswer"
 			bot.Send(msg)
 			log.Printf("\nbotState: %s\n", botState)
 			break
 
 		case "addingQuestionAnswer":
-			newQuestion.Answer = input
-			msg := tgbotapi.NewMessage(userId, "Давай теперь подсказку!")
+			newQuestion.Answer = strings.Split(input, "|")
+			msg := tgbotapi.NewMessage(userId, "Давай теперь подсказку!Если хочешь несколько , то ставь между подсказками |")
 			botState = "addingQuestionHint"
 			bot.Send(msg)
 			log.Printf("\nbotState: %s\n", botState)
 			break
 
 		case "addingQuestionHint":
-			newQuestion.Hint = input
+			newQuestion.Hint = strings.Split(input, "|")
 			AddQuestion(newQuestion)
 			questions = UpdateQuestions()
 			msg := tgbotapi.NewMessage(userId, "Вопрос создан!")
